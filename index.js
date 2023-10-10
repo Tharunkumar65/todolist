@@ -1,13 +1,14 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose= require("mongoose");
-const _ =require("lodash");
+const _=require("lodash");
+const  dotenv = require("dotenv").config();
 
 const app= express();
-const port = 3000;
+const port = process.env.PORT ||3000
 app.use(bodyParser.urlencoded({extended:true}));
 app.use(express.static("public"));
-mongoose.connect("mongodb://127.0.0.1:27017/todolistDB",{useNewUrlParser:true})
+mongoose.connect(process.env.MONGODB_url,{useNewUrlParser:true})
 .then(function(){
     console.log("Database connected successfully");
 })
@@ -20,7 +21,7 @@ const itemsSchema= {
 }
 const Item= mongoose.model("Item",itemsSchema);
 const item1= new Item({
-     name:"buyitems"
+     name:"Buy items"
 })
 const item2=new Item({
     name:"cook food"
@@ -95,34 +96,60 @@ app.post("/",(req,res)=>{
     }
 
 })
-app.post("/delete",(req,res)=>{
-    const checkedid=req.body.checkbox;
-    const listName=req.body.listName;
-    console.log(checkedid);
-    if(listName === "Today"){
-        Item.findByIdAndRemove(checkedid)
-        .then(() => {
-            res.redirect("/");
-            console.log("deleted successfully");
-         })
-           .catch(error => {
-            console.log(`Error deleting by ID: ${error.message}`);
-           });
 
-        }
-        else{
-         List.findOneAndUpdate({name:listName},{$pull:{items:{ _id:checkedid}}},{new:true})
-         .then(() => {
-            res.redirect("/"+listName);
-            console.log("deleted successfully");
-         })
-           .catch(error => {
-            console.log(`Error deleting by ID: ${error.message}`);
-           });
-        }  
-       
-   
-})
+app.post("/delete", (req, res) => {
+    const checkedId =_.capitalize(req.body.checkbox);
+    const listName = req.body.listName;
+
+
+        // Delete the item from the Item model
+        Item.findByIdAndRemove(checkedId)
+        .then(() => {
+            
+                console.log("Deleted successfully");
+                res.redirect("/");
+            });
+    // } else {
+    //     // Delete the item from the List model
+    //     List.findOne({ name: listName }) 
+    //     .then((err, foundList) => {
+    //         if (!err) {
+    //             // Find the item to delete within the list
+    //             const itemToDelete = foundList.items.find((item)=> item._id === checkedId);
+
+    //             if (itemToDelete) {
+    //                 // Remove the item from the list's items array
+    //                 foundList.items.remove(itemToDelete);
+
+    //                 // Save the updated list
+    //                 foundList.save((err) => {
+    //                     if (!err) {
+    //                         // Delete the item itself from the Item model
+    //                         Item.findByIdAndRemove(checkedId, (err) => {
+    //                             if (!err) {
+    //                                 console.log("Deleted successfully");
+    //                                 res.redirect("/" + listName);
+    //                             } else {
+    //                                 console.log("Error deleting by ID: " + err);
+    //                             }
+    //                         });
+    //                     } else {
+    //                         console.log("Error saving list: " + err);
+    //                     }
+    //                 });
+    //             } else {
+    //                 console.log("Item not found in the list.");
+    //             }
+    //         } else {
+    //             console.log("Error finding list: " + err);
+    //         }
+    //     });
+    // }
+});
+
+
+ 
+
 
 app.get("/:customListName",(req,res)=>{
      const customListName=req.params.customListName;
